@@ -1,6 +1,7 @@
 ---
 import BaseHead from '../components/BaseHead.astro';
 import CopyCommand from '../components/CopyCommand.astro';
+import Shuffle from '../components/Shuffle.astro';
 import { ArrowLeft } from '@lucide/astro';
 import { SITE_TITLE } from '../consts';
 
@@ -15,10 +16,13 @@ const description =
 	</head>
 	<body>
 		<main class="page">
-			<a class="back" href="/">
-				<ArrowLeft size={16} stroke-width={1.5} aria-hidden="true" />
-				<span>Back</span>
-			</a>
+			<header class="masthead">
+				<Shuffle text="50BytesOfJohn" tag="span" class="wordmark" loop loopDelay={5} />
+				<a class="back" href="/">
+					<ArrowLeft size={16} stroke-width={1.5} aria-hidden="true" />
+					<span>Back</span>
+				</a>
+			</header>
 
 			<section class="intro" aria-labelledby="skills-title">
 				<h1 id="skills-title">Agent skills</h1>
@@ -48,6 +52,24 @@ const description =
 		color: var(--ink-muted);
 	}
 
+	.masthead {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1.5rem;
+	}
+
+	.page :global(.wordmark) {
+		font-family: var(--font-geist-pixel);
+		font-size: 1rem;
+		font-weight: 400;
+		color: var(--ink);
+	}
+
+	.page :global(.wordmark .shuffle-wrap[data-char='J']) {
+		margin-inline-start: -0.04em;
+	}
+
 	a {
 		color: var(--ink);
 		text-decoration: underline;
@@ -64,7 +86,6 @@ const description =
 	.back {
 		display: inline-flex;
 		align-items: center;
-		align-self: flex-start;
 		gap: 0.5rem;
 	}
 
