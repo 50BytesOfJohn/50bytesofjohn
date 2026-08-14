@@ -1,11 +1,42 @@
 ---
 /**
- * The skills README is fetched at build time and embedded as escaped markdown text.
+ * The skills README is fetched and rendered at build time.
  * Vercel's daily rebuild keeps the static copy current without a browser-side request.
  */
-const readmeUrl = 'https://raw.githubusercontent.com/50BytesOfJohn/skills/main/README.md';
+import { Marked } from 'marked';
 
-let markdown = '';
+const readmeUrl = 'https://raw.githubusercontent.com/50BytesOfJohn/skills/main/README.md';
+const repositoryUrl = 'https://github.com/50BytesOfJohn/skills/blob/main/';
+const repositoryRawUrl = 'https://raw.githubusercontent.com/50BytesOfJohn/skills/main/';
+
+function resolveUrl(href: string, image: boolean) {
+	if (href.startsWith('#')) return href;
+
+	try {
+		const url = new URL(href, image ? repositoryRawUrl : repositoryUrl);
+		const allowedProtocols = image ? ['http:', 'https:'] : ['http:', 'https:', 'mailto:'];
+		return allowedProtocols.includes(url.protocol) ? url.href : '#';
+	} catch {
+		return '#';
+	}
+}
+
+const markdownParser = new Marked({
+	gfm: true,
+	renderer: {
+		// The README is rendered with set:html, so embedded HTML is deliberately excluded.
+		html() {
+			return '';
+		},
+	},
+	walkTokens(token) {
+		if (token.type === 'heading') token.depth = Math.min(token.depth + 2, 6);
+		if (token.type === 'link') token.href = resolveUrl(token.href, false);
+		if (token.type === 'image') token.href = resolveUrl(token.href, true);
+	},
+});
+
+let renderedMarkdown = '';
 
 try {
 	const response = await fetch(readmeUrl, {
@@ -13,17 +44,17 @@ try {
 		signal: AbortSignal.timeout(5000),
 	});
 
-	if (response.ok) markdown = (await response.text()).trim();
+	if (response.ok) renderedMarkdown = await markdownParser.parse((await response.text()).trim());
 } catch {
 	// An unavailable README should not block the rest of the static site build.
 }
 ---
 
 {
-	markdown && (
+	renderedMarkdown && (
 		<section aria-labelledby="readme-title">
 			<h2 id="readme-title" class="label">README</h2>
-			<pre class="readme"><code>{markdown}</code></pre>
+			<div class="readme" set:html={renderedMarkdown} />
 		</section>
 	)
 }
@@ -39,18 +70,107 @@ try {
 	}
 
 	.readme {
-		box-sizing: border-box;
-		width: 100%;
-		margin: 0;
-		padding: 1rem;
+		color: var(--ink-muted);
+		font-size: 0.875rem;
+		line-height: 1.65;
+	}
+
+	.readme :global(h3),
+	.readme :global(h4),
+	.readme :global(h5),
+	.readme :global(h6) {
+		letter-spacing: 0;
+		color: var(--ink);
+	}
+
+	.readme :global(h3) {
+		margin: 0 0 1rem;
+		font-size: 1.125rem;
+		font-weight: 600;
+	}
+
+	.readme :global(h4) {
+		margin: 2rem 0 0.75rem;
+		font-size: 1rem;
+		font-weight: 600;
+	}
+
+	.readme :global(h5),
+	.readme :global(h6) {
+		margin: 1.5rem 0 0.5rem;
+		font-size: 0.875rem;
+		font-weight: 600;
+	}
+
+	.readme :global(p) {
+		margin: 0 0 1rem;
+		text-wrap: pretty;
+	}
+
+	.readme :global(a) {
+		color: var(--ink);
+		text-decoration: underline;
+		text-decoration-color: var(--rule);
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+		transition: text-decoration-color 150ms ease;
+	}
+
+	.readme :global(a:hover) {
+		text-decoration-color: var(--ink);
+	}
+
+	.readme :global(ul),
+	.readme :global(ol) {
+		margin: 0 0 1rem;
+		padding-inline-start: 1.25rem;
+	}
+
+	.readme :global(pre) {
+		margin: 0 0 1rem;
+		padding: 0.75rem;
 		border: 1px solid var(--rule);
 		border-radius: 4px;
 		background: #fafafa;
-		color: var(--ink-muted);
-		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+		overflow-x: auto;
 		font-size: 0.75rem;
 		line-height: 1.6;
-		white-space: pre-wrap;
-		overflow-wrap: anywhere;
+	}
+
+	.readme :global(:not(pre) > code) {
+		padding: 0.1rem 0.25rem;
+		border-radius: 2px;
+		background: #f4f4f4;
+		color: var(--ink);
+		font-size: 0.8125rem;
+	}
+
+	.readme :global(table) {
+		display: block;
+		width: 100%;
+		margin: 0 0 1.5rem;
+		border-collapse: collapse;
+		overflow-x: auto;
+	}
+
+	.readme :global(th),
+	.readme :global(td) {
+		padding: 0.5rem 0.75rem 0.5rem 0;
+		border-bottom: 1px solid var(--rule);
+		text-align: start;
+		vertical-align: top;
+	}
+
+	.readme :global(th) {
+		color: var(--ink);
+		font-weight: 500;
+	}
+
+	.readme :global(img) {
+		border-radius: 0;
+	}
+
+	.readme :global(> :last-child) {
+		margin-bottom: 0;
 	}
 </style>
