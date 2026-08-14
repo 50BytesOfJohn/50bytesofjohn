@@ -1,0 +1,77 @@
+---
+import { ArrowLeft } from '@lucide/astro';
+import Shuffle from './Shuffle.astro';
+
+interface Props {
+	action?: 'skills' | 'back';
+}
+
+const { action = 'skills' } = Astro.props;
+const isBack = action === 'back';
+---
+
+<header class="masthead">
+	<Shuffle text="50BytesOfJohn" tag={isBack ? 'span' : 'h1'} class="wordmark" loop loopDelay={5} />
+	{
+		isBack ? (
+			<a class="back" href="/">
+				<ArrowLeft size={16} stroke-width={1.5} aria-hidden="true" />
+				<span>Back</span>
+			</a>
+		) : (
+			<nav aria-label="Primary">
+				<a href="/skills/">Skills</a>
+			</nav>
+		)
+	}
+</header>
+
+<style>
+	.masthead {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1.5rem;
+	}
+
+	.masthead :global(.wordmark) {
+		margin: 0;
+		font-family: var(--font-geist-pixel);
+		font-size: 1rem;
+		font-weight: 400;
+		color: var(--ink);
+	}
+
+	.masthead :global(.wordmark .shuffle-wrap[data-char='J']) {
+		margin-inline-start: -0.04em;
+	}
+
+	a {
+		color: var(--ink);
+		text-decoration: underline;
+		text-decoration-color: var(--rule);
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+		transition: text-decoration-color 150ms ease;
+	}
+
+	a:hover {
+		text-decoration-color: var(--ink);
+	}
+
+	.back {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+		.back :global(svg) {
+			transition: transform 150ms var(--ease-out);
+		}
+
+		.back:hover :global(svg) {
+			transform: translateX(-3px);
+		}
+	}
+</style>

@@ -1,94 +1,28 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
 import CopyCommand from '../components/CopyCommand.astro';
-import Shuffle from '../components/Shuffle.astro';
-import { ArrowLeft } from '@lucide/astro';
+import SiteMasthead from '../components/SiteMasthead.astro';
 import { SITE_TITLE } from '../consts';
+import PersonalPage from '../layouts/PersonalPage.astro';
 
 const description =
 	'Skills that grew out of my daily work with AI agents. Each one exists because I needed it.';
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<BaseHead title={`Agent skills | ${SITE_TITLE}`} description={description} />
-	</head>
-	<body>
-		<main class="page">
-			<header class="masthead">
-				<Shuffle text="50BytesOfJohn" tag="span" class="wordmark" loop loopDelay={5} />
-				<a class="back" href="/">
-					<ArrowLeft size={16} stroke-width={1.5} aria-hidden="true" />
-					<span>Back</span>
-				</a>
-			</header>
+<PersonalPage title={`Agent skills | ${SITE_TITLE}`} description={description}>
+	<SiteMasthead action="back" />
 
-			<section class="intro" aria-labelledby="skills-title">
-				<h1 id="skills-title">Agent skills</h1>
-				<p>{description}</p>
-			</section>
+	<section class="intro" aria-labelledby="skills-title">
+		<h1 id="skills-title">Agent skills</h1>
+		<p>{description}</p>
+	</section>
 
-			<section aria-labelledby="install-title">
-				<h2 id="install-title" class="label">Install all</h2>
-				<CopyCommand command="npx skills add 50BytesOfJohn/skills" />
-			</section>
-		</main>
-	</body>
-</html>
+	<section aria-labelledby="install-title">
+		<h2 id="install-title" class="label">Install all</h2>
+		<CopyCommand command="npx skills add 50BytesOfJohn/skills" />
+	</section>
+</PersonalPage>
 
 <style>
-	.page {
-		box-sizing: border-box;
-		width: 100%;
-		max-width: 36rem;
-		margin-inline: auto;
-		padding: clamp(3rem, 10vh, 6rem) 1.5rem 5rem;
-		display: flex;
-		flex-direction: column;
-		gap: 3.5rem;
-		font-size: 0.9375rem;
-		line-height: 1.6;
-		color: var(--ink-muted);
-	}
-
-	.masthead {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1.5rem;
-	}
-
-	.page :global(.wordmark) {
-		font-family: var(--font-geist-pixel);
-		font-size: 1rem;
-		font-weight: 400;
-		color: var(--ink);
-	}
-
-	.page :global(.wordmark .shuffle-wrap[data-char='J']) {
-		margin-inline-start: -0.04em;
-	}
-
-	a {
-		color: var(--ink);
-		text-decoration: underline;
-		text-decoration-color: var(--rule);
-		text-decoration-thickness: 1px;
-		text-underline-offset: 0.2em;
-		transition: text-decoration-color 150ms ease;
-	}
-
-	a:hover {
-		text-decoration-color: var(--ink);
-	}
-
-	.back {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
 	.intro {
 		max-width: 31rem;
 	}
@@ -113,15 +47,5 @@ const description =
 		letter-spacing: 0.09em;
 		text-transform: uppercase;
 		color: var(--ink-faint);
-	}
-
-	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-		.back :global(svg) {
-			transition: transform 150ms var(--ease-out);
-		}
-
-		.back:hover :global(svg) {
-			transform: translateX(-3px);
-		}
 	}
 </style>
