@@ -192,46 +192,52 @@ const {
 
 	const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 
-	for (const el of document.querySelectorAll<HTMLElement>('[data-shuffle]')) {
-		el.dataset.text = el.textContent ?? '';
+	function initializeShuffleText() {
+		for (const el of document.querySelectorAll<HTMLElement>('[data-shuffle]:not([data-shuffle-ready])')) {
+			el.dataset.shuffleReady = '';
+			el.dataset.text = el.textContent ?? '';
 
-		// Reduced motion still gets the split structure, just never animated, so the
-		// resting layout is identical for everyone.
-		if (reduced.matches) {
-			document.fonts.ready.then(() => {
-				build(el);
-				settle(el);
+			// Reduced motion still gets the split structure, just never animated, so the
+			// resting layout is identical for everyone.
+			if (reduced.matches) {
+				document.fonts.ready.then(() => {
+					build(el);
+					settle(el);
+				});
+				continue;
+			}
+
+			// One guard for both triggers, so a loop tick can't rebuild mid-hover or vice versa.
+			let busy = true;
+			const run = async () => {
+				if (busy || !el.isConnected) return;
+				busy = true;
+				await shuffle(el);
+				busy = false;
+			};
+
+			const first = document.fonts.ready.then(async () => {
+				if (el.isConnected) await shuffle(el);
+				busy = false;
 			});
-			continue;
-		}
 
-		// One guard for both triggers, so a loop tick can't rebuild mid-hover or vice versa.
-		let busy = true;
-		const run = async () => {
-			if (busy) return;
-			busy = true;
-			await shuffle(el);
-			busy = false;
-		};
+			if (el.dataset.loop !== undefined) {
+				const delay = Number(el.dataset.loopDelay) * 1000;
+				first.then(async () => {
+					while (el.isConnected) {
+						await wait(delay);
+						await visible(); // don't burn frames in a background tab
+						await run();
+					}
+				});
+			}
 
-		const first = document.fonts.ready.then(async () => {
-			await shuffle(el);
-			busy = false;
-		});
-
-		if (el.dataset.loop !== undefined) {
-			const delay = Number(el.dataset.loopDelay) * 1000;
-			first.then(async () => {
-				for (;;) {
-					await wait(delay);
-					await visible(); // don't burn frames in a background tab
-					await run();
-				}
-			});
-		}
-
-		if (el.dataset.hover !== undefined && matchMedia('(hover: hover) and (pointer: fine)').matches) {
-			el.addEventListener('mouseenter', run);
+			if (el.dataset.hover !== undefined && matchMedia('(hover: hover) and (pointer: fine)').matches) {
+				el.addEventListener('mouseenter', run);
+			}
 		}
 	}
+
+	initializeShuffleText();
+	document.addEventListener('astro:page-load', initializeShuffleText);
 </script>

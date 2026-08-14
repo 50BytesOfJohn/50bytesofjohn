@@ -10,7 +10,7 @@ const { action = 'skills' } = Astro.props;
 const isBack = action === 'back';
 ---
 
-<header class="masthead">
+<header class="masthead" transition:name="masthead" transition:animate="none">
 	<Shuffle text="50BytesOfJohn" tag={isBack ? 'span' : 'h1'} class="wordmark" loop loopDelay={5} />
 	{
 		isBack ? (

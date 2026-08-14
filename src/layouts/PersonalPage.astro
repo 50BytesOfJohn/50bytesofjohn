@@ -1,5 +1,6 @@
 ---
 import BaseHead from '../components/BaseHead.astro';
+import { ClientRouter, fade } from 'astro:transitions';
 
 interface Props {
 	title: string;
@@ -7,12 +8,14 @@ interface Props {
 }
 
 const { title, description } = Astro.props;
+const pageTransition = fade({ duration: '150ms' });
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" transition:animate={pageTransition}>
 	<head>
 		<BaseHead title={title} description={description} />
+		<ClientRouter fallback="swap" />
 	</head>
 	<body>
 		<main class="page">
