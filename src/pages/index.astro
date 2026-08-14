@@ -1,6 +1,7 @@
 ---
 import BaseHead from '../components/BaseHead.astro';
 import ContributionGraph from '../components/ContributionGraph.astro';
+import CopyCommand from '../components/CopyCommand.astro';
 import Shuffle from '../components/Shuffle.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 
@@ -16,6 +17,7 @@ const projects = [
 		href: 'https://mynth.io',
 		description: 'Your Infra for AI media.',
 		source: 'https://github.com/mynthio/oss',
+		sourceLabel: 'oss source',
 	},
 	{
 		name: 'Hanoki',
@@ -59,13 +61,16 @@ const projects = [
 
 			<section>
 				<h2 class="label">Agent skills</h2>
-				<a class="skills" href="https://github.com/50BytesOfJohn/skills" target="_blank" rel="noopener">
-					<span class="skills-name">50BytesOfJohn/skills</span>
-					<span class="skills-desc">
-						Skills for coding agents &mdash; AAA unit tests, no-waffle writing, opencode CLI
-						consultation, dependency updates and more.
-					</span>
-				</a>
+				<div class="skills">
+					<a class="skills-link" href="https://github.com/50BytesOfJohn/skills" target="_blank" rel="noopener">
+						<span class="skills-name">50BytesOfJohn/skills</span>
+						<span class="skills-desc">
+							Skills for coding agents &mdash; AAA unit tests, no-waffle writing, opencode CLI
+							consultation, dependency updates and more.
+						</span>
+					</a>
+					<CopyCommand command="npx skills add 50BytesOfJohn/skills" />
+				</div>
 			</section>
 
 			<section>
@@ -81,7 +86,7 @@ const projects = [
 									{project.description}
 									{project.source && (
 										<a class="project-source" href={project.source} target="_blank" rel="noopener">
-											source ↗
+											{project.sourceLabel ?? 'source'} ↗
 										</a>
 									)}
 								</p>
@@ -109,6 +114,7 @@ const projects = [
 
 <style>
 	.page {
+		box-sizing: border-box;
 		width: 100%;
 		max-width: 36rem;
 		margin-inline: auto;
@@ -178,13 +184,9 @@ const projects = [
 	}
 
 	.skills {
-		display: flex;
-		flex-direction: column;
-		gap: 0.375rem;
-		padding: 1rem 1.125rem;
+		overflow: hidden;
 		border: 1px solid var(--rule);
-		border-radius: 10px;
-		text-decoration: none;
+		border-radius: 8px;
 		transition:
 			border-color 150ms ease,
 			background-color 150ms ease;
@@ -193,6 +195,14 @@ const projects = [
 	.skills:hover {
 		border-color: #d4d4d4;
 		background-color: #fafafa;
+	}
+
+	.skills-link {
+		display: flex;
+		flex-direction: column;
+		gap: 0.375rem;
+		padding: 1rem 1.125rem;
+		text-decoration: none;
 	}
 
 	.skills-name {
