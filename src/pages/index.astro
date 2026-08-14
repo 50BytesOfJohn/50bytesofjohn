@@ -4,11 +4,10 @@ import ContributionGraph from '../components/ContributionGraph.astro';
 import Shuffle from '../components/Shuffle.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 
-const navigation = [
-	{ label: 'X', href: 'https://x.com/50BytesOfJohn', external: true },
-	{ label: 'GitHub', href: 'https://github.com/50BytesOfJohn', external: true },
-	{ label: 'Skills', href: '/skills/', external: false },
-	{ label: 'Blog', href: 'https://hashnode.com/@50BytesOfJohn', external: true },
+const elsewhere = [
+	{ label: 'X', href: 'https://x.com/50BytesOfJohn' },
+	{ label: 'GitHub', href: 'https://github.com/50BytesOfJohn' },
+	{ label: 'Blog', href: 'https://hashnode.com/@50BytesOfJohn' },
 ];
 
 const projects = [
@@ -47,15 +46,16 @@ const projects = [
 	<body>
 		<main class="page">
 			<header class="intro">
-				<Shuffle text="50BytesOfJohn" tag="h1" class="wordmark" loop loopDelay={5} />
-				<nav class="navigation" aria-label="Primary">
+				<div class="masthead">
+					<Shuffle text="50BytesOfJohn" tag="h1" class="wordmark" loop loopDelay={5} />
+					<nav class="site-navigation" aria-label="Primary">
+						<a href="/skills/">Skills</a>
+					</nav>
+				</div>
+				<nav class="elsewhere" aria-label="Elsewhere">
 					{
-						navigation.map((item) => (
-							<a
-								href={item.href}
-								rel={item.external ? 'me noopener' : undefined}
-								target={item.external ? '_blank' : undefined}
-							>
+						elsewhere.map((item) => (
+							<a href={item.href} rel="me">
 								{item.label}
 							</a>
 						))
@@ -145,7 +145,14 @@ const projects = [
 		gap: 1rem;
 	}
 
-	.navigation {
+	.masthead {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1.5rem;
+	}
+
+	.elsewhere {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 1.25rem;
@@ -171,6 +178,17 @@ const projects = [
 
 	a:hover {
 		text-decoration-color: var(--ink);
+	}
+
+	.elsewhere a {
+		color: var(--ink-muted);
+		transition:
+			color 150ms ease,
+			text-decoration-color 150ms ease;
+	}
+
+	.elsewhere a:hover {
+		color: var(--ink);
 	}
 
 	.projects {
