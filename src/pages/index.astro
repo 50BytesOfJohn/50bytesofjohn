@@ -1,14 +1,14 @@
 ---
 import BaseHead from '../components/BaseHead.astro';
 import ContributionGraph from '../components/ContributionGraph.astro';
-import CopyCommand from '../components/CopyCommand.astro';
 import Shuffle from '../components/Shuffle.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 
-const socials = [
-	{ label: 'X', href: 'https://x.com/50BytesOfJohn' },
-	{ label: 'GitHub', href: 'https://github.com/50BytesOfJohn' },
-	{ label: 'Blog', href: 'https://hashnode.com/@50BytesOfJohn' },
+const navigation = [
+	{ label: 'X', href: 'https://x.com/50BytesOfJohn', external: true },
+	{ label: 'GitHub', href: 'https://github.com/50BytesOfJohn', external: true },
+	{ label: 'Skills', href: '/skills/', external: false },
+	{ label: 'Blog', href: 'https://hashnode.com/@50BytesOfJohn', external: true },
 ];
 
 const projects = [
@@ -48,11 +48,15 @@ const projects = [
 		<main class="page">
 			<header class="intro">
 				<Shuffle text="50BytesOfJohn" tag="h1" class="wordmark" loop loopDelay={5} />
-				<nav class="socials" aria-label="Elsewhere">
+				<nav class="navigation" aria-label="Primary">
 					{
-						socials.map((social) => (
-							<a href={social.href} rel="me noopener" target="_blank">
-								{social.label}
+						navigation.map((item) => (
+							<a
+								href={item.href}
+								rel={item.external ? 'me noopener' : undefined}
+								target={item.external ? '_blank' : undefined}
+							>
+								{item.label}
 							</a>
 						))
 					}
@@ -80,22 +84,6 @@ const projects = [
 						))
 					}
 				</ul>
-			</section>
-
-			<section>
-				<h2 class="label">Agent skills</h2>
-				<div class="skills">
-					<a class="skills-name" href="https://github.com/50BytesOfJohn/skills" target="_blank" rel="noopener">
-						50BytesOfJohn/skills
-					</a>
-					<div class="skills-details">
-						<p class="skills-desc">
-							Agent workflows for AAA unit tests, concise writing, CLI consultation,
-							dependency updates and more.
-						</p>
-						<CopyCommand command="npx skills add 50BytesOfJohn/skills" />
-					</div>
-				</div>
 			</section>
 
 			<section>
@@ -157,7 +145,7 @@ const projects = [
 		gap: 1rem;
 	}
 
-	.socials {
+	.navigation {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 1.25rem;
@@ -183,29 +171,6 @@ const projects = [
 
 	a:hover {
 		text-decoration-color: var(--ink);
-	}
-
-	.skills {
-		display: flex;
-		flex-direction: column;
-		gap: 0.375rem;
-	}
-
-	.skills-name {
-		font-weight: 500;
-		color: var(--ink);
-	}
-
-	.skills-details {
-		display: flex;
-		min-width: 0;
-		flex-direction: column;
-		gap: 0.75rem;
-	}
-
-	.skills-desc {
-		margin: 0;
-		text-wrap: pretty;
 	}
 
 	.projects {
