@@ -1,6 +1,7 @@
 ---
 import CopyCommand from '../components/CopyCommand.astro';
 import SiteMasthead from '../components/SiteMasthead.astro';
+import SkillsReadme from '../components/SkillsReadme.astro';
 import { SITE_TITLE } from '../consts';
 import PersonalPage from '../layouts/PersonalPage.astro';
 
@@ -20,6 +21,8 @@ const description =
 		<h2 id="install-title" class="label">Install all</h2>
 		<CopyCommand command="npx skills add 50BytesOfJohn/skills" />
 	</section>
+
+	<SkillsReadme />
 </PersonalPage>
 
 <style>

@@ -1,0 +1,56 @@
+---
+/**
+ * The skills README is fetched at build time and embedded as escaped markdown text.
+ * Vercel's daily rebuild keeps the static copy current without a browser-side request.
+ */
+const readmeUrl = 'https://raw.githubusercontent.com/50BytesOfJohn/skills/main/README.md';
+
+let markdown = '';
+
+try {
+	const response = await fetch(readmeUrl, {
+		headers: { Accept: 'text/plain' },
+		signal: AbortSignal.timeout(5000),
+	});
+
+	if (response.ok) markdown = (await response.text()).trim();
+} catch {
+	// An unavailable README should not block the rest of the static site build.
+}
+---
+
+{
+	markdown && (
+		<section aria-labelledby="readme-title">
+			<h2 id="readme-title" class="label">README</h2>
+			<pre class="readme"><code>{markdown}</code></pre>
+		</section>
+	)
+}
+
+<style>
+	.label {
+		margin: 0 0 1rem;
+		font-size: 0.6875rem;
+		font-weight: 500;
+		letter-spacing: 0.09em;
+		text-transform: uppercase;
+		color: var(--ink-faint);
+	}
+
+	.readme {
+		box-sizing: border-box;
+		width: 100%;
+		margin: 0;
+		padding: 1rem;
+		border: 1px solid var(--rule);
+		border-radius: 4px;
+		background: #fafafa;
+		color: var(--ink-muted);
+		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+		font-size: 0.75rem;
+		line-height: 1.6;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+	}
+</style>
