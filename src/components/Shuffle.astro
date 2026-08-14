@@ -1,0 +1,237 @@
+---
+/**
+ * Shuffle text animation, ported from https://reactbits.dev/text-animations/shuffle
+ * to plain DOM + WAAPI.
+ *
+ * ponytail: the original is React + gsap + ScrollTrigger + SplitText (~180kB) for one
+ * heading. Same mechanic — per-character strips that roll horizontally through scramble
+ * glyphs, even/odd stagger — in ~90 lines with zero dependencies and no hydration.
+ * Reach for the real thing if you ever need scroll triggers or the vertical directions.
+ */
+interface Props {
+	text: string;
+	tag?: 'h1' | 'h2' | 'h3' | 'p' | 'span';
+	class?: string;
+	/** Seconds per character roll. */
+	duration?: number;
+	/** Seconds between characters within the odd/even group. */
+	stagger?: number;
+	/** How many scramble glyphs each character rolls through. */
+	shuffleTimes?: number;
+	/** Glyphs used for the intermediate frames. Empty = roll through the same glyph. */
+	scrambleCharset?: string;
+	/** Re-run on mouseenter (fine pointers only). */
+	triggerOnHover?: boolean;
+	/** Replay forever. Pauses while the tab is in the background. */
+	loop?: boolean;
+	/** Seconds of stillness between loops. */
+	loopDelay?: number;
+}
+
+const {
+	text,
+	tag: Tag = 'span',
+	class: className,
+	duration = 0.35,
+	stagger = 0.03,
+	shuffleTimes = 1,
+	scrambleCharset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+	triggerOnHover = true,
+	loop = false,
+	loopDelay = 5,
+} = Astro.props;
+---
+
+<!-- aria-label pins the accessible name: mid-roll the DOM text is scramble glyphs. -->
+<Tag
+	class:list={['shuffle', className]}
+	aria-label={text}
+	data-shuffle
+	data-duration={duration}
+	data-stagger={stagger}
+	data-shuffle-times={shuffleTimes}
+	data-charset={scrambleCharset}
+	data-hover={triggerOnHover ? '' : undefined}
+	data-loop={loop ? '' : undefined}
+	data-loop-delay={loopDelay}>{text}</Tag
+>
+
+<style>
+	.shuffle {
+		display: inline-block;
+		line-height: 1;
+		white-space: nowrap;
+	}
+
+	/* Hidden only while the strips are being measured, so no half-built frame paints. */
+	.shuffle[data-building] {
+		visibility: hidden;
+	}
+
+	.shuffle :global(.shuffle-wrap) {
+		display: inline-block;
+		overflow: hidden;
+		vertical-align: bottom;
+	}
+
+	.shuffle :global(.shuffle-strip) {
+		display: inline-flex;
+		white-space: nowrap;
+		will-change: transform;
+	}
+
+	.shuffle :global(.shuffle-char) {
+		display: inline-block;
+		flex: none;
+		text-align: center;
+	}
+</style>
+
+<script>
+	const EASE = 'cubic-bezier(0.23, 1, 0.32, 1)'; // strong ease-out
+
+	/** Split the text into per-character strips, parked at their pre-roll offset. */
+	function build(el: HTMLElement) {
+		const rolls = Math.max(1, Math.floor(Number(el.dataset.shuffleTimes)));
+		const charset = el.dataset.charset ?? '';
+		const text = el.dataset.text!;
+		const pick = () => charset.charAt(Math.floor(Math.random() * charset.length));
+
+		el.setAttribute('data-building', '');
+		el.replaceChildren();
+
+		// Pass 1: render bare characters so each one can be measured in the real font.
+		const chars = [...text].map((c) => {
+			const span = document.createElement('span');
+			span.className = 'shuffle-char';
+			span.textContent = c;
+			el.appendChild(span);
+			return span;
+		});
+		// Widths are stored in em, not px: the strips outlive the measurement, and px
+		// would clip the glyphs the moment the page is zoomed or the root size changes.
+		const fontSize = parseFloat(getComputedStyle(el).fontSize);
+		const widths = chars.map((c) => c.getBoundingClientRect().width);
+
+		// Pass 2: wrap each character in a clipped window holding a strip of glyphs.
+		const strips = chars.map((char, i) => {
+			const width = widths[i];
+			const wrap = document.createElement('span');
+			wrap.className = 'shuffle-wrap';
+			wrap.style.width = `${width / fontSize}em`;
+
+			const strip = document.createElement('span');
+			strip.className = 'shuffle-strip';
+
+			// [real, ...scramble, real] — lands back on the real glyph.
+			const glyphs = [text[i], ...Array.from({ length: rolls }, () => (charset ? pick() : text[i])), text[i]];
+			for (const g of glyphs) {
+				const span = document.createElement('span');
+				span.className = 'shuffle-char';
+				span.style.width = `${width / fontSize}em`;
+				span.textContent = g;
+				strip.appendChild(span);
+			}
+
+			const start = -(rolls + 1) * width;
+			strip.style.transform = `translate3d(${start}px, 0, 0)`;
+			wrap.appendChild(strip);
+			// Exposed so a consumer can kern an awkward pair — see the wordmark in index.astro.
+			wrap.dataset.char = text[i];
+			char.replaceWith(wrap);
+			return { strip, start };
+		});
+
+		el.removeAttribute('data-building');
+		return strips;
+	}
+
+	/** Build, roll every character home, then trim back to the resting glyphs. */
+	function shuffle(el: HTMLElement) {
+		const duration = Number(el.dataset.duration) * 1000;
+		const stagger = Number(el.dataset.stagger) * 1000;
+		const strips = build(el);
+
+		const roll = ({ strip, start }: (typeof strips)[number], delay: number) =>
+			strip.animate(
+				[{ transform: `translate3d(${start}px, 0, 0)` }, { transform: 'translate3d(0, 0, 0)' }],
+				{ duration, delay, easing: EASE, fill: 'both' },
+			).finished;
+
+		// Odd characters lead, even ones join at 70% of the odd group's run.
+		const odd = strips.filter((_, i) => i % 2 === 1);
+		const even = strips.filter((_, i) => i % 2 === 0);
+		const evenStart = odd.length ? (duration + Math.max(0, odd.length - 1) * stagger) * 0.7 : 0;
+		const running = [
+			...odd.map((s, i) => roll(s, i * stagger)),
+			...even.map((s, i) => roll(s, evenStart + i * stagger)),
+		];
+
+		return Promise.all(running).then(() => settle(el));
+	}
+
+	/**
+	 * Drop every strip down to its resting glyph. The per-character wrappers stay in the
+	 * DOM so the settled wordmark keeps the same metrics (and the same kerning hooks) as
+	 * the animated one — collapsing to a bare text node shifts kerned pairs by a hair.
+	 * Selection and copy still yield the plain string; the spans carry no separators.
+	 */
+	function settle(el: HTMLElement) {
+		for (const strip of el.querySelectorAll<HTMLElement>('.shuffle-strip')) {
+			strip.replaceChildren(strip.firstElementChild!);
+			strip.style.transform = 'none';
+			strip.style.willChange = 'auto';
+		}
+	}
+
+	const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+	const visible = () =>
+		document.hidden
+			? new Promise((r) => document.addEventListener('visibilitychange', r, { once: true }))
+			: Promise.resolve();
+
+	const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+
+	for (const el of document.querySelectorAll<HTMLElement>('[data-shuffle]')) {
+		el.dataset.text = el.textContent ?? '';
+
+		// Reduced motion still gets the split structure, just never animated, so the
+		// resting layout is identical for everyone.
+		if (reduced.matches) {
+			document.fonts.ready.then(() => {
+				build(el);
+				settle(el);
+			});
+			continue;
+		}
+
+		// One guard for both triggers, so a loop tick can't rebuild mid-hover or vice versa.
+		let busy = true;
+		const run = async () => {
+			if (busy) return;
+			busy = true;
+			await shuffle(el);
+			busy = false;
+		};
+
+		const first = document.fonts.ready.then(async () => {
+			await shuffle(el);
+			busy = false;
+		});
+
+		if (el.dataset.loop !== undefined) {
+			const delay = Number(el.dataset.loopDelay) * 1000;
+			first.then(async () => {
+				for (;;) {
+					await wait(delay);
+					await visible(); // don't burn frames in a background tab
+					await run();
+				}
+			});
+		}
+
+		if (el.dataset.hover !== undefined && matchMedia('(hover: hover) and (pointer: fine)').matches) {
+			el.addEventListener('mouseenter', run);
+		}
+	}
+</script>

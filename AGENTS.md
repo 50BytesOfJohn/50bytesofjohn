@@ -8,6 +8,11 @@ astro dev --background
 
 Manage the background server with `astro dev stop`, `astro dev status`, and `astro dev logs`.
 
+If the dev server exits before becoming ready with `CannotFetchFontFile` (a 404 on a
+`fonts.gstatic.com` URL), Astro's font cache has a stale download URL in it. Clear it and
+restart — `rm -rf node_modules/.astro/fonts .astro/fonts`. The error surfaces in
+`.astro/dev.log`, not on stdout.
+
 ## Documentation
 
 Full documentation: https://docs.astro.build

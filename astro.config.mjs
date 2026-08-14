@@ -6,30 +6,27 @@ import { defineConfig, fontProviders } from 'astro/config';
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://example.com',
+	// TODO: set to the real domain — used for canonical URLs, sitemap and RSS.
+	site: 'https://50bytesofjohn.dev',
 	integrations: [mdx(), sitemap()],
 	fonts: [
 		{
-			provider: fontProviders.local(),
-			name: 'Atkinson',
-			cssVariable: '--font-atkinson',
-			fallbacks: ['sans-serif'],
-			options: {
-				variants: [
-					{
-						src: ['./src/assets/fonts/atkinson-regular.woff'],
-						weight: 400,
-						style: 'normal',
-						display: 'swap',
-					},
-					{
-						src: ['./src/assets/fonts/atkinson-bold.woff'],
-						weight: 700,
-						style: 'normal',
-						display: 'swap',
-					},
-				],
-			},
+			provider: fontProviders.google(),
+			name: 'Geist',
+			cssVariable: '--font-geist',
+			weights: ['400 600'],
+			styles: ['normal'],
+			subsets: ['latin'],
+			fallbacks: ['ui-sans-serif', 'system-ui', 'sans-serif'],
+		},
+		{
+			// ponytail: Geist Pixel ships a single 400 weight on Google Fonts, so no
+			// weight list here and no synthetic bold on the wordmark.
+			provider: fontProviders.google(),
+			name: 'Geist Pixel',
+			cssVariable: '--font-geist-pixel',
+			subsets: ['latin'],
+			fallbacks: ['ui-monospace', 'monospace'],
 		},
 	],
 });
