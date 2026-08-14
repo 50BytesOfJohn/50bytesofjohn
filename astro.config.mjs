@@ -20,13 +20,19 @@ export default defineConfig({
 			fallbacks: ['ui-sans-serif', 'system-ui', 'sans-serif'],
 		},
 		{
-			// ponytail: Geist Pixel ships a single 400 weight on Google Fonts, so no
-			// weight list here and no synthetic bold on the wordmark.
-			provider: fontProviders.google(),
+			provider: fontProviders.local(),
 			name: 'Geist Pixel',
 			cssVariable: '--font-geist-pixel',
-			subsets: ['latin'],
 			fallbacks: ['ui-monospace', 'monospace'],
+			options: {
+				variants: [
+					{
+						src: ['./src/assets/fonts/geist-pixel-regular.woff2'],
+						weight: 400,
+						style: 'normal',
+					},
+				],
+			},
 		},
 	],
 });
