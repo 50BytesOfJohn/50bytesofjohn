@@ -1,20 +1,317 @@
 ---
 import { type CollectionEntry, getCollection, render } from 'astro:content';
-import BlogPost from '../../layouts/BlogPost.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+import SiteMasthead from '../../components/SiteMasthead.astro';
+import { SITE_TITLE } from '../../consts';
+import PersonalPage from '../../layouts/PersonalPage.astro';
 
 export async function getStaticPaths() {
-	const posts = await getCollection('blog');
-	return posts.map((post) => ({
+	const posts = (await getCollection('blog')).sort(
+		(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+	);
+
+	// Sorted newest-first, so the neighbour above an entry is the newer one.
+	return posts.map((post, index) => ({
 		params: { slug: post.id },
-		props: post,
+		props: { post, newer: posts[index - 1], older: posts[index + 1] },
 	}));
 }
-type Props = CollectionEntry<'blog'>;
 
-const post = Astro.props;
+interface Props {
+	post: CollectionEntry<'blog'>;
+	newer?: CollectionEntry<'blog'>;
+	older?: CollectionEntry<'blog'>;
+}
+
+const { post, newer, older } = Astro.props;
+const { title, description, pubDate, updatedDate } = post.data;
 const { Content } = await render(post);
 ---
 
-<BlogPost {...post.data}>
-	<Content />
-</BlogPost>
+<PersonalPage title={`${title} | ${SITE_TITLE}`} description={description}>
+	<SiteMasthead action="back" backHref="/blog/" />
+
+	<article>
+		<header>
+			<h1>{title}</h1>
+			<p class="meta">
+				<FormattedDate date={pubDate} />
+				{
+					updatedDate && (
+						<>
+							<span aria-hidden="true">·</span>
+							<span>
+								Updated <FormattedDate date={updatedDate} />
+							</span>
+						</>
+					)
+				}
+			</p>
+		</header>
+
+		<div class="prose">
+			{/* The subtitle opens the article rather than sitting in the masthead block. */}
+			<p class="lede">{description}</p>
+			<Content />
+		</div>
+	</article>
+
+	{
+		(newer || older) && (
+			<nav class="pager" aria-label="More posts">
+				{/* Same two columns as the projects and post lists, so the page keeps one leading edge. */}
+				{newer && (
+					<div class="pager-item">
+						<p class="pager-label">Newer</p>
+						<a href={`/blog/${newer.id}/`}>{newer.data.title}</a>
+					</div>
+				)}
+				{older && (
+					<div class="pager-item">
+						<p class="pager-label">Older</p>
+						<a href={`/blog/${older.id}/`}>{older.data.title}</a>
+					</div>
+				)}
+			</nav>
+		)
+	}
+</PersonalPage>
+
+<style>
+	article {
+		display: flex;
+		flex-direction: column;
+		gap: 2rem;
+	}
+
+	h1 {
+		margin: 0;
+		font-size: 1.75rem;
+		font-weight: 600;
+		line-height: 1.25;
+		/* Large text sets tighter than body copy. */
+		letter-spacing: -0.015em;
+		color: var(--ink);
+		text-wrap: balance;
+	}
+
+	.meta {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0 0.5rem;
+		margin: 0.875rem 0 0;
+		font-size: 0.8125rem;
+		font-variant-numeric: tabular-nums;
+		color: var(--ink-faint);
+	}
+
+	/*
+	 * Reading copy, not UI copy: a step up from the site's 15px and a full ink tone, capped at
+	 * ~65 characters by the layout's 36rem column.
+	 */
+	.prose {
+		font-size: 1.0625rem;
+		line-height: 1.7;
+		color: var(--ink);
+	}
+
+	/* Reads as the article's standfirst: body size, one tone back. */
+	.prose .lede {
+		color: var(--ink-muted);
+		text-wrap: pretty;
+	}
+
+	.prose :global(> :first-child) {
+		margin-block-start: 0;
+	}
+
+	.prose :global(> :last-child) {
+		margin-block-end: 0;
+	}
+
+	.prose :global(p) {
+		margin: 0 0 1.25rem;
+	}
+
+	/* Headings carry their own space above, so it belongs to the section they open. */
+	.prose :global(h2),
+	.prose :global(h3) {
+		font-weight: 600;
+		letter-spacing: 0;
+		color: var(--ink);
+		text-wrap: balance;
+		/* Room to breathe when a heading anchor is jumped to. */
+		scroll-margin-top: 2rem;
+	}
+
+	.prose :global(h2) {
+		margin: 2.75rem 0 0.75rem;
+		font-size: 1.1875rem;
+		line-height: 1.35;
+	}
+
+	/* One size below h2 is body size, so weight and spacing do the separating. */
+	.prose :global(h3) {
+		margin: 2rem 0 0.5rem;
+		font-size: 1.0625rem;
+		line-height: 1.4;
+	}
+
+	/* In a wall of text the underline has to be visible without being loud. */
+	.prose :global(a) {
+		color: var(--ink);
+		text-decoration: underline;
+		text-decoration-color: var(--ink-faint);
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+		text-decoration-skip-ink: auto;
+		transition: text-decoration-color 150ms ease;
+	}
+
+	.prose :global(a:hover) {
+		text-decoration-color: var(--ink);
+	}
+
+	.prose :global(ul),
+	.prose :global(ol) {
+		margin: 0 0 1.25rem;
+		padding-inline-start: 1.25rem;
+	}
+
+	.prose :global(li) {
+		margin-block: 0.375rem;
+	}
+
+	.prose :global(li::marker) {
+		color: var(--ink-faint);
+	}
+
+	.prose :global(li > ul),
+	.prose :global(li > ol) {
+		margin-block: 0.375rem 0;
+	}
+
+	/* em, so inline code tracks whatever text it sits in. */
+	.prose :global(:not(pre) > code) {
+		padding: 0.1em 0.3em;
+		border-radius: 3px;
+		background: var(--wash);
+		font-size: 0.875em;
+	}
+
+	.prose :global(pre) {
+		margin: 0 0 1.5rem;
+		padding: 1rem;
+		border: 1px solid var(--rule);
+		border-radius: 6px;
+		/* Shiki's inline background is stripped in astro.config, so the surface is defined here. */
+		background: var(--wash);
+		color: var(--ink);
+		font-size: 0.875rem;
+		line-height: 1.65;
+		tab-size: 2;
+		overflow-x: auto;
+	}
+
+	.prose :global(blockquote) {
+		margin: 0 0 1.25rem;
+		padding-inline-start: 1.25rem;
+		border-inline-start: 2px solid var(--rule);
+		color: var(--ink-muted);
+	}
+
+	.prose :global(blockquote > :last-child) {
+		margin-bottom: 0;
+	}
+
+	.prose :global(hr) {
+		margin: 2.5rem 0;
+	}
+
+	.prose :global(figure) {
+		margin: 2rem 0;
+	}
+
+	.prose :global(img) {
+		display: block;
+		margin: 2rem 0;
+		border-radius: 4px;
+	}
+
+	.prose :global(figure img) {
+		margin: 0;
+	}
+
+	.prose :global(figcaption) {
+		margin-block-start: 0.75rem;
+		font-size: 0.8125rem;
+		color: var(--ink-faint);
+	}
+
+	/* Block-level, so a wide table scrolls instead of stretching the reading column. */
+	.prose :global(table) {
+		display: block;
+		width: 100%;
+		margin: 0 0 1.5rem;
+		border-collapse: collapse;
+		font-size: 0.9375rem;
+		overflow-x: auto;
+	}
+
+	.prose :global(th),
+	.prose :global(td) {
+		padding: 0.5rem 0.75rem 0.5rem 0;
+		border-bottom: 1px solid var(--rule);
+		text-align: start;
+		vertical-align: top;
+	}
+
+	.prose :global(th) {
+		color: var(--ink);
+		font-weight: 500;
+	}
+
+	.pager {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	.pager-item {
+		display: grid;
+		grid-template-columns: 7rem 1fr;
+		align-items: baseline;
+		gap: 0 1.5rem;
+	}
+
+	.pager-label {
+		margin: 0;
+		font-size: 0.8125rem;
+		color: var(--ink-faint);
+	}
+
+	.pager a {
+		font-weight: 500;
+		color: var(--ink);
+		text-decoration: underline;
+		text-decoration-color: var(--rule);
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+		transition: text-decoration-color 150ms ease;
+	}
+
+	.pager a:hover {
+		text-decoration-color: var(--ink);
+	}
+
+	@media (max-width: 30rem) {
+		h1 {
+			font-size: 1.5rem;
+		}
+
+		.pager-item {
+			grid-template-columns: 1fr;
+			gap: 0.25rem;
+		}
+	}
+</style>

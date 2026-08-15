@@ -1,13 +1,20 @@
 ---
+import { ArrowRight } from '@lucide/astro';
+import { getCollection } from 'astro:content';
 import ContributionGraph from '../components/ContributionGraph.astro';
+import PostList from '../components/PostList.astro';
 import SiteMasthead from '../components/SiteMasthead.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 import PersonalPage from '../layouts/PersonalPage.astro';
 
+const posts = (await getCollection('blog')).sort(
+	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+const recentPosts = posts.slice(0, 4);
+
 const elsewhere = [
 	{ label: 'X', href: 'https://x.com/50BytesOfJohn' },
 	{ label: 'GitHub', href: 'https://github.com/50BytesOfJohn' },
-	{ label: 'Blog', href: 'https://hashnode.com/@50BytesOfJohn' },
 ];
 
 const projects = [
@@ -34,6 +41,15 @@ const projects = [
 		name: 'Prsna',
 		href: 'https://prsna.app',
 		description: 'AI roleplay chat and character generator.',
+	},
+];
+
+const resources = [
+	{
+		name: 'Agent skills',
+		href: '/skills/',
+		description: 'Skills that grew out of my daily work with AI agents.',
+		source: 'https://github.com/50BytesOfJohn/skills',
 	},
 ];
 ---
@@ -74,6 +90,42 @@ const projects = [
 			}
 		</ul>
 	</section>
+
+	<section>
+		<h2 class="label">Resources</h2>
+		<ul class="projects">
+			{
+				resources.map((resource) => (
+					<li>
+						<a class="project-name" href={resource.href}>
+							{resource.name}
+						</a>
+						<p class="project-desc">
+							{resource.description}
+							<a class="project-source" href={resource.source} target="_blank" rel="noopener">
+								source ↗
+							</a>
+						</p>
+					</li>
+				))
+			}
+		</ul>
+	</section>
+
+	{
+		posts.length > 0 && (
+			<section>
+				<h2 class="label">Writing</h2>
+				<PostList posts={recentPosts} />
+				{posts.length > recentPosts.length && (
+					<a class="all-posts" href="/blog/">
+						All posts
+						<ArrowRight size={14} stroke-width={1.5} aria-hidden="true" />
+					</a>
+				)}
+			</section>
+		)
+	}
 
 	<section>
 		<h2 class="label">Commits</h2>
@@ -168,6 +220,31 @@ const projects = [
 		white-space: nowrap;
 	}
 
+	/* Sits under the entries, not under the year column, so the list keeps one edge. */
+	.all-posts {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		margin-block-start: 2rem;
+		margin-inline-start: 8.5rem;
+		font-size: 0.875rem;
+		color: var(--ink-muted);
+	}
+
+	.all-posts:hover {
+		color: var(--ink);
+	}
+
+	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+		.all-posts :global(svg) {
+			transition: transform 150ms var(--ease-out);
+		}
+
+		.all-posts:hover :global(svg) {
+			transform: translateX(3px);
+		}
+	}
+
 	.contact {
 		font-size: 0.875rem;
 	}
@@ -180,6 +257,10 @@ const projects = [
 		.projects li {
 			grid-template-columns: 1fr;
 			gap: 0.25rem;
+		}
+
+		.all-posts {
+			margin-inline-start: 0;
 		}
 	}
 </style>

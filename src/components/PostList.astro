@@ -1,0 +1,165 @@
+---
+/**
+ * Posts as a commit-log-style list: the year sits in the leading column and the entries
+ * hang off it, so the section shares its leading edge with the projects list above.
+ */
+import { ArrowRight } from '@lucide/astro';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+	posts: CollectionEntry<'blog'>[];
+}
+
+const { posts } = Astro.props;
+
+// Posts arrive newest-first and a Map keeps insertion order, so the years come out descending.
+const years = new Map<number, CollectionEntry<'blog'>[]>();
+for (const post of posts) {
+	const year = post.data.pubDate.getFullYear();
+	const entries = years.get(year);
+	if (entries) entries.push(post);
+	else years.set(year, [post]);
+}
+
+// pubDate is parsed as local midnight, so it has to be formatted locally too — the same
+// assumption FormattedDate makes.
+const dayAndMonth = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
+---
+
+<div class="log">
+	{
+		[...years].map(([year, entries]) => (
+			// The year names the list rather than being a heading, so the component can sit under
+			// an h1 or an h2 without skipping a level.
+			<div class="year">
+				<p class="year-label" id={`posts-${year}`}>
+					{year}
+				</p>
+				<ul class="posts" aria-labelledby={`posts-${year}`}>
+					{entries.map((post) => (
+						<li>
+							<a href={`/blog/${post.id}/`}>
+								<span class="title">
+									<span class="title-text">{post.data.title}</span>
+									<ArrowRight class="arrow" size={14} stroke-width={2} aria-hidden="true" />
+								</span>
+								<time class="date" datetime={post.data.pubDate.toISOString()}>
+									{dayAndMonth.format(post.data.pubDate)}
+								</time>
+							</a>
+						</li>
+					))}
+				</ul>
+			</div>
+		))
+	}
+</div>
+
+<style>
+	.log {
+		display: flex;
+		flex-direction: column;
+		/* Twice the gap between entries, so the years read as groups without a rule. */
+		gap: 1.5rem;
+	}
+
+	/* Same two columns as the projects list, so both sections share one leading edge. */
+	.year {
+		display: grid;
+		grid-template-columns: 7rem 1fr;
+		align-items: baseline;
+		gap: 0 1.5rem;
+	}
+
+	.year-label {
+		margin: 0;
+		font-size: 0.8125rem;
+		font-variant-numeric: tabular-nums;
+		color: var(--ink-faint);
+	}
+
+	.posts {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	a {
+		display: grid;
+		grid-template-columns: 1fr auto;
+		align-items: baseline;
+		gap: 0 1rem;
+		/* Only the title carries the underline; the date and arrow are metadata. */
+		text-decoration: none;
+		/* Pushes the row past a 24px hit target without opening up the visual rhythm. */
+		padding-block: 0.125rem;
+		border-radius: 2px;
+	}
+
+	a:focus-visible {
+		outline: 2px solid var(--ink);
+		outline-offset: 6px;
+	}
+
+	.title-text {
+		font-weight: 500;
+		color: var(--ink);
+		text-decoration: underline;
+		text-decoration-color: var(--rule);
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+		transition: text-decoration-color 150ms ease;
+	}
+
+	a:hover .title-text,
+	a:focus-visible .title-text {
+		text-decoration-color: var(--ink);
+	}
+
+	.title :global(.arrow) {
+		margin-inline-start: 0.4em;
+		vertical-align: -0.1em;
+		color: var(--ink-faint);
+		opacity: 0;
+		transform: translateX(-3px);
+		transition:
+			opacity 150ms var(--ease-out),
+			transform 150ms var(--ease-out);
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		a:hover .title :global(.arrow) {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	a:focus-visible .title :global(.arrow) {
+		opacity: 1;
+		transform: none;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.title :global(.arrow) {
+			transform: none;
+			transition: opacity 150ms ease;
+		}
+	}
+
+	.date {
+		font-size: 0.8125rem;
+		font-variant-numeric: tabular-nums;
+		color: var(--ink-faint);
+		white-space: nowrap;
+	}
+
+	@media (max-width: 30rem) {
+		.year {
+			grid-template-columns: 1fr;
+			gap: 0.5rem;
+		}
+	}
+</style>

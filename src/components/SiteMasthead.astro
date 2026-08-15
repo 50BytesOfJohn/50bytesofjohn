@@ -3,25 +3,23 @@ import { ArrowLeft } from '@lucide/astro';
 import Shuffle from './Shuffle.astro';
 
 interface Props {
-	action?: 'skills' | 'back';
+	action?: 'back';
+	/** Where "Back" goes. Posts step back to the index, everything else to the home page. */
+	backHref?: string;
 }
 
-const { action = 'skills' } = Astro.props;
+const { action, backHref = '/' } = Astro.props;
 const isBack = action === 'back';
 ---
 
 <header class="masthead" transition:name="masthead" transition:animate="none">
 	<Shuffle text="50BytesOfJohn" tag={isBack ? 'span' : 'h1'} class="wordmark" loop loopDelay={5} />
 	{
-		isBack ? (
-			<a class="back" href="/">
+		isBack && (
+			<a class="back" href={backHref}>
 				<ArrowLeft size={16} stroke-width={1.5} aria-hidden="true" />
 				<span>Back</span>
 			</a>
-		) : (
-			<nav aria-label="Primary">
-				<a href="/skills/">Skills</a>
-			</nav>
 		)
 	}
 </header>

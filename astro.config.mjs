@@ -9,6 +9,22 @@ export default defineConfig({
 	// TODO: set to the real domain — used for canonical URLs, sitemap and RSS.
 	site: 'https://50bytesofjohn.dev',
 	integrations: [mdx(), sitemap()],
+	markdown: {
+		shikiConfig: {
+			// Every token in this theme clears 4.5:1 on the code surface; the softer light themes
+			// (vitesse-light, min-light) put punctuation and identifiers under 3:1.
+			theme: 'github-light-high-contrast',
+			transformers: [
+				{
+					// Shiki writes the block's background and base colour as an inline style, which
+					// no stylesheet can override. Dropping it lets the page own the code surface.
+					pre(node) {
+						delete node.properties.style;
+					},
+				},
+			],
+		},
+	},
 	fonts: [
 		{
 			provider: fontProviders.google(),
