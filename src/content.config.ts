@@ -12,6 +12,8 @@ const blog = defineCollection({
 		// Transform string to Date object
 		pubDate: z.coerce.date(),
 		updatedDate: z.coerce.date().optional(),
+		// Set when the post lives elsewhere: the list links straight out and no page is built.
+		externalUrl: z.string().url().optional(),
 	}),
 });
 

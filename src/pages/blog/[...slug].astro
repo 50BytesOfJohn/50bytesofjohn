@@ -6,7 +6,8 @@ import { SITE_TITLE } from '../../consts';
 import PersonalPage from '../../layouts/PersonalPage.astro';
 
 export async function getStaticPaths() {
-	const posts = (await getCollection('blog')).sort(
+	// External posts are list entries only — there is nothing to render for them.
+	const posts = (await getCollection('blog', ({ data }) => !data.externalUrl)).sort(
 		(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 	);
 
