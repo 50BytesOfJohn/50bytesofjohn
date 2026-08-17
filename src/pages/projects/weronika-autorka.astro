@@ -1,0 +1,144 @@
+---
+import SiteMasthead from '../../components/SiteMasthead.astro';
+import { SITE_TITLE } from '../../consts';
+import PersonalPage from '../../layouts/PersonalPage.astro';
+
+const description =
+	'A shop and checkout for a Polish author who sells books straight to readers.';
+
+const stack = [
+	{ label: 'Framework', value: 'Astro in server mode, with React islands for the interactive bits' },
+	{ label: 'Hosting', value: 'Cloudflare Workers' },
+	{ label: 'Data', value: 'Cloudflare D1 (SQLite) with Drizzle ORM' },
+	{ label: 'Payments', value: 'Stripe Checkout, orders reconciled through webhooks' },
+	{ label: 'Email', value: 'Resend with React Email templates' },
+	{ label: 'Styling', value: 'Tailwind CSS, Motion for animation' },
+	{ label: 'Monitoring', value: 'Sentry' },
+];
+---
+
+<PersonalPage title={`weronika-autorka.pl | ${SITE_TITLE}`} description={description}>
+	<SiteMasthead action="back" />
+
+	<section class="intro" aria-labelledby="project-title">
+		<h1 id="project-title">weronika-autorka.pl</h1>
+		<p>{description}</p>
+		<a class="visit" href="https://weronika-autorka.pl" target="_blank" rel="noopener">
+			Visit site ↗
+		</a>
+	</section>
+
+	<section aria-labelledby="scope-title">
+		<h2 id="scope-title" class="label">Scope</h2>
+		<p>
+			I did the design and the build. The shop has product pages, a cart, and a checkout that runs
+			all the way through: Stripe payment, an order written to the database, and email at each step.
+			Around it sit the delivery, returns and FAQ pages, plus the author's own about, characters and
+			contact pages.
+		</p>
+		<p>
+			The look is closer to a book cover than to a store. Bodoni for display type, hand-drawn
+			accents, not much motion.
+		</p>
+	</section>
+
+	<section aria-labelledby="stack-title">
+		<h2 id="stack-title" class="label">Stack</h2>
+		<dl class="stack">
+			{
+				stack.map((item) => (
+					<div class="stack-row">
+						<dt>{item.label}</dt>
+						<dd>{item.value}</dd>
+					</div>
+				))
+			}
+		</dl>
+	</section>
+</PersonalPage>
+
+<style>
+	.intro {
+		max-width: 31rem;
+	}
+
+	h1 {
+		margin: 0 0 0.75rem;
+		font-size: 1.5rem;
+		font-weight: 600;
+		letter-spacing: 0;
+		color: var(--ink);
+	}
+
+	.intro p {
+		margin: 0 0 1rem;
+		text-wrap: pretty;
+	}
+
+	.label {
+		margin: 0 0 1rem;
+		font-size: 0.6875rem;
+		font-weight: 500;
+		letter-spacing: 0.09em;
+		text-transform: uppercase;
+		color: var(--ink-faint);
+	}
+
+	section p {
+		margin: 0 0 1rem;
+		text-wrap: pretty;
+	}
+
+	section p:last-child {
+		margin-bottom: 0;
+	}
+
+	a {
+		color: var(--ink);
+		text-decoration: underline;
+		text-decoration-color: var(--rule);
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+		transition: text-decoration-color 150ms ease;
+	}
+
+	a:hover {
+		text-decoration-color: var(--ink);
+	}
+
+	.visit {
+		font-size: 0.875rem;
+		white-space: nowrap;
+	}
+
+	.stack {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		margin: 0;
+	}
+
+	/* Same 7rem label column as the project list on the home page, so the two pages line up. */
+	.stack-row {
+		display: grid;
+		grid-template-columns: 7rem 1fr;
+		gap: 0 1.5rem;
+	}
+
+	.stack-row dt {
+		font-size: 0.8125rem;
+		color: var(--ink-faint);
+	}
+
+	.stack-row dd {
+		margin: 0;
+		text-wrap: pretty;
+	}
+
+	@media (max-width: 30rem) {
+		.stack-row {
+			grid-template-columns: 1fr;
+			gap: 0.125rem;
+		}
+	}
+</style>

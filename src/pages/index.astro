@@ -1,8 +1,9 @@
 ---
-import { ArrowRight } from '@lucide/astro';
+import { ArrowRight, Plus } from '@lucide/astro';
 import { getCollection } from 'astro:content';
 import ContributionGraph from '../components/ContributionGraph.astro';
 import PostList from '../components/PostList.astro';
+import ProjectList from '../components/ProjectList.astro';
 import SiteMasthead from '../components/SiteMasthead.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 import PersonalPage from '../layouts/PersonalPage.astro';
@@ -42,6 +43,27 @@ const projects = [
 		href: 'https://prsna.app',
 		description: 'AI roleplay chat and character generator.',
 	},
+	{
+		name: 'WT Shop',
+		href: '/projects/weronika-autorka/',
+		description: 'Books shop with Stripe checkout, built on Astro and Cloudflare.',
+		source: 'https://weronika-autorka.pl',
+		sourceLabel: 'live site',
+	},
+];
+
+// Client work. Real, but not what the page should lead with, so it sits behind a disclosure.
+const moreProjects = [
+	{
+		name: 'LGD Sandomierz',
+		href: 'https://portal.lgd-sandomierz.eu',
+		description: 'Directus-backed portal for a local action group: content, listings and events.',
+	},
+	{
+		name: 'Doradztwo CUD',
+		href: 'https://www.doradztwocud.pl/',
+		description: 'Logo, web design and build for a consulting practice.',
+	},
 ];
 
 const resources = [
@@ -70,46 +92,21 @@ const resources = [
 
 	<section>
 		<h2 class="label">Projects</h2>
-		<ul class="projects">
-			{
-				projects.map((project) => (
-					<li>
-						<a class="project-name" href={project.href} target="_blank" rel="noopener">
-							{project.name}
-						</a>
-						<p class="project-desc">
-							{project.description}
-							{project.source && (
-								<a class="project-source" href={project.source} target="_blank" rel="noopener">
-									{project.sourceLabel ?? 'source'} ↗
-								</a>
-							)}
-						</p>
-					</li>
-				))
-			}
-		</ul>
+		<ProjectList items={projects} />
+		<details class="more">
+			<summary>
+				<span class="more-label">More</span>
+				<Plus size={14} stroke-width={1.5} aria-hidden="true" />
+			</summary>
+			<div class="more-body">
+				<ProjectList items={moreProjects} />
+			</div>
+		</details>
 	</section>
 
 	<section>
 		<h2 class="label">Resources</h2>
-		<ul class="projects">
-			{
-				resources.map((resource) => (
-					<li>
-						<a class="project-name" href={resource.href}>
-							{resource.name}
-						</a>
-						<p class="project-desc">
-							{resource.description}
-							<a class="project-source" href={resource.source} target="_blank" rel="noopener">
-								source ↗
-							</a>
-						</p>
-					</li>
-				))
-			}
-		</ul>
+		<ProjectList items={resources} />
 	</section>
 
 	{
@@ -187,37 +184,73 @@ const resources = [
 		color: var(--ink);
 	}
 
-	.projects {
-		display: flex;
-		flex-direction: column;
-		gap: 1.25rem;
-		margin: 0;
-		padding: 0;
+	/* Opened rarely, so a native disclosure does the job with no JS and working keyboard support. */
+	.more summary {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		margin-block-start: 1.25rem;
+		margin-inline-start: 8.5rem;
+		width: fit-content;
+		font-size: 0.875rem;
+		color: var(--ink-muted);
+		cursor: pointer;
 		list-style: none;
+		transition: color 150ms ease;
 	}
 
-	.projects li {
-		display: grid;
-		grid-template-columns: 7rem 1fr;
-		gap: 0 1.5rem;
+	.more summary::-webkit-details-marker {
+		display: none;
 	}
 
-	.project-name {
-		font-weight: 500;
+	.more summary:hover {
 		color: var(--ink);
 	}
 
-	.project-desc {
-		margin: 0;
-		text-wrap: pretty;
+	.more-label {
+		text-decoration: underline;
+		text-decoration-color: var(--rule);
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+		transition: text-decoration-color 150ms ease;
 	}
 
-	/* Sits after the sentence, so it has to read as metadata rather than as more prose. */
-	.project-source {
-		margin-inline-start: 0.5rem;
-		font-size: 0.8125rem;
-		color: var(--ink-faint);
-		white-space: nowrap;
+	.more summary:hover .more-label {
+		text-decoration-color: var(--ink);
+	}
+
+	.more-body {
+		padding-block-start: 1.25rem;
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		/* interpolate-size lets the auto height animate; unsupported browsers just snap open. */
+		.more {
+			interpolate-size: allow-keywords;
+		}
+
+		.more::details-content {
+			height: 0;
+			overflow: hidden;
+			opacity: 0;
+			transition:
+				height 220ms var(--ease-out),
+				opacity 220ms var(--ease-out),
+				content-visibility 220ms allow-discrete;
+		}
+
+		.more[open]::details-content {
+			height: auto;
+			opacity: 1;
+		}
+
+		.more summary :global(svg) {
+			transition: transform 220ms var(--ease-out);
+		}
+
+		.more[open] summary :global(svg) {
+			transform: rotate(45deg);
+		}
 	}
 
 	/* Sits under the entries, not under the year column, so the list keeps one edge. */
@@ -254,12 +287,8 @@ const resources = [
 	}
 
 	@media (max-width: 30rem) {
-		.projects li {
-			grid-template-columns: 1fr;
-			gap: 0.25rem;
-		}
-
-		.all-posts {
+		.all-posts,
+		.more summary {
 			margin-inline-start: 0;
 		}
 	}

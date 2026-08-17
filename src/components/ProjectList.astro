@@ -1,0 +1,98 @@
+---
+export interface Project {
+	name: string;
+	href: string;
+	description: string;
+	source?: string;
+	sourceLabel?: string;
+}
+
+interface Props {
+	items: Project[];
+}
+
+const { items } = Astro.props;
+
+/** Internal hrefs stay in the tab; everything else is someone else's site. */
+const isExternal = (href: string) => !href.startsWith('/');
+---
+
+<ul class="projects">
+	{
+		items.map((item) => (
+			<li>
+				<a
+					class="project-name"
+					href={item.href}
+					target={isExternal(item.href) ? '_blank' : undefined}
+					rel={isExternal(item.href) ? 'noopener' : undefined}
+				>
+					{item.name}
+				</a>
+				<p class="project-desc">
+					{item.description}
+					{item.source && (
+						<a class="project-source" href={item.source} target="_blank" rel="noopener">
+							{item.sourceLabel ?? 'source'} ↗
+						</a>
+					)}
+				</p>
+			</li>
+		))
+	}
+</ul>
+
+<style>
+	.projects {
+		display: flex;
+		flex-direction: column;
+		gap: 1.25rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.projects li {
+		display: grid;
+		grid-template-columns: 7rem 1fr;
+		gap: 0 1.5rem;
+	}
+
+	a {
+		color: var(--ink);
+		text-decoration: underline;
+		text-decoration-color: var(--rule);
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+		transition: text-decoration-color 150ms ease;
+	}
+
+	a:hover {
+		text-decoration-color: var(--ink);
+	}
+
+	.project-name {
+		font-weight: 500;
+		color: var(--ink);
+	}
+
+	.project-desc {
+		margin: 0;
+		text-wrap: pretty;
+	}
+
+	/* Sits after the sentence, so it has to read as metadata rather than as more prose. */
+	.project-source {
+		margin-inline-start: 0.5rem;
+		font-size: 0.8125rem;
+		color: var(--ink-faint);
+		white-space: nowrap;
+	}
+
+	@media (max-width: 30rem) {
+		.projects li {
+			grid-template-columns: 1fr;
+			gap: 0.25rem;
+		}
+	}
+</style>
