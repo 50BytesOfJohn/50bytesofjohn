@@ -1,9 +1,9 @@
 ---
 /**
- * Posts as a commit-log-style list: the year sits in the leading column and the entries
- * hang off it, so the section shares its leading edge with the projects list above.
+ * Posts grouped by month: the "Aug 2026" label sits in the leading column and the titles hang
+ * off it, so the section matches the projects list above — label left, one entry per row.
  */
-import { ArrowRight } from '@lucide/astro';
+import { ArrowRight, ArrowUpRight } from '@lucide/astro';
 import type { CollectionEntry } from 'astro:content';
 
 interface Props {
@@ -12,40 +12,42 @@ interface Props {
 
 const { posts } = Astro.props;
 
-// Posts arrive newest-first and a Map keeps insertion order, so the years come out descending.
-const years = new Map<number, CollectionEntry<'blog'>[]>();
-for (const post of posts) {
-	const year = post.data.pubDate.getFullYear();
-	const entries = years.get(year);
-	if (entries) entries.push(post);
-	else years.set(year, [post]);
-}
-
 // pubDate is parsed as local midnight, so it has to be formatted locally too — the same
 // assumption FormattedDate makes.
-const dayAndMonth = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
+const monthAndYear = new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' });
+
+// Posts arrive newest-first and a Map keeps insertion order, so the months come out descending.
+const months = new Map<string, CollectionEntry<'blog'>[]>();
+for (const post of posts) {
+	const label = monthAndYear.format(post.data.pubDate);
+	const entries = months.get(label);
+	if (entries) entries.push(post);
+	else months.set(label, [post]);
+}
 ---
 
 <div class="log">
 	{
-		[...years].map(([year, entries]) => (
-			// The year names the list rather than being a heading, so the component can sit under
+		[...months].map(([label, entries]) => (
+			// The month names the list rather than being a heading, so the component can sit under
 			// an h1 or an h2 without skipping a level.
-			<div class="year">
-				<p class="year-label" id={`posts-${year}`}>
-					{year}
+			<div class="month">
+				<p class="month-label" id={`posts-${label.replace(' ', '-')}`}>
+					{label}
 				</p>
-				<ul class="posts" aria-labelledby={`posts-${year}`}>
+				<ul class="posts" aria-labelledby={`posts-${label.replace(' ', '-')}`}>
 					{entries.map((post) => (
 						<li>
-							<a href={`/blog/${post.id}/`}>
-								<span class="title">
-									<span class="title-text">{post.data.title}</span>
+							<a
+								href={post.data.externalUrl ?? `/blog/${post.id}/`}
+								{...(post.data.externalUrl ? { target: '_blank', rel: 'noopener' } : {})}
+							>
+								<span class="title-text">{post.data.title}</span>
+								{post.data.externalUrl ? (
+									<ArrowUpRight class="arrow" size={14} stroke-width={2} aria-hidden="true" />
+								) : (
 									<ArrowRight class="arrow" size={14} stroke-width={2} aria-hidden="true" />
-								</span>
-								<time class="date" datetime={post.data.pubDate.toISOString()}>
-									{dayAndMonth.format(post.data.pubDate)}
-								</time>
+								)}
 							</a>
 						</li>
 					))}
@@ -59,19 +61,18 @@ const dayAndMonth = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'num
 	.log {
 		display: flex;
 		flex-direction: column;
-		/* Twice the gap between entries, so the years read as groups without a rule. */
-		gap: 1.5rem;
+		gap: 1.25rem;
 	}
 
 	/* Same two columns as the projects list, so both sections share one leading edge. */
-	.year {
+	.month {
 		display: grid;
 		grid-template-columns: 7rem 1fr;
 		align-items: baseline;
 		gap: 0 1.5rem;
 	}
 
-	.year-label {
+	.month-label {
 		margin: 0;
 		font-size: 0.8125rem;
 		font-variant-numeric: tabular-nums;
@@ -88,14 +89,8 @@ const dayAndMonth = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'num
 	}
 
 	a {
-		display: grid;
-		grid-template-columns: 1fr auto;
-		align-items: baseline;
-		gap: 0 1rem;
-		/* Only the title carries the underline; the date and arrow are metadata. */
+		/* Only the title carries the underline; the arrow is metadata. */
 		text-decoration: none;
-		/* Pushes the row past a 24px hit target without opening up the visual rhythm. */
-		padding-block: 0.125rem;
 		border-radius: 2px;
 	}
 
@@ -119,7 +114,7 @@ const dayAndMonth = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'num
 		text-decoration-color: var(--ink);
 	}
 
-	.title :global(.arrow) {
+	a :global(.arrow) {
 		margin-inline-start: 0.4em;
 		vertical-align: -0.1em;
 		color: var(--ink-faint);
@@ -131,33 +126,26 @@ const dayAndMonth = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'num
 	}
 
 	@media (hover: hover) and (pointer: fine) {
-		a:hover .title :global(.arrow) {
+		a:hover :global(.arrow) {
 			opacity: 1;
 			transform: none;
 		}
 	}
 
-	a:focus-visible .title :global(.arrow) {
+	a:focus-visible :global(.arrow) {
 		opacity: 1;
 		transform: none;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.title :global(.arrow) {
+		a :global(.arrow) {
 			transform: none;
 			transition: opacity 150ms ease;
 		}
 	}
 
-	.date {
-		font-size: 0.8125rem;
-		font-variant-numeric: tabular-nums;
-		color: var(--ink-faint);
-		white-space: nowrap;
-	}
-
 	@media (max-width: 30rem) {
-		.year {
+		.month {
 			grid-template-columns: 1fr;
 			gap: 0.5rem;
 		}
