@@ -3,4 +3,4 @@
 
 export const SITE_TITLE = '50BytesOfJohn';
 export const SITE_DESCRIPTION =
-	'Developer building Mynth, Hanoki, Panqueue and Prsna. Side projects, open source and agent skills.';
+	'Developer building Sidelight, Mynth, Hanoki, Panqueue and Prsna. Side projects, open source and agent skills.';
