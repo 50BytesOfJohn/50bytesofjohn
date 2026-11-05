@@ -1,0 +1,626 @@
+---
+import { getImage, Image } from 'astro:assets';
+import SiteMasthead from '../components/SiteMasthead.astro';
+import { SITE_TITLE } from '../consts';
+import PersonalPage from '../layouts/PersonalPage.astro';
+import KnoaIcon from '../assets/knoa/icon.svg';
+import demoPoster from '../assets/knoa/demo-poster.jpg';
+import libraryDusk from '../assets/knoa/library-dusk.png';
+import libraryPaper from '../assets/knoa/library-paper.png';
+
+const repo = 'https://github.com/50BytesOfJohn/knoa';
+// Release assets keep a stable name, so this always serves the newest DMG as a file download
+// (GitHub answers with Content-Disposition: attachment, no release page in between).
+const downloadUrl = `${repo}/releases/latest/download/Knoa.dmg`;
+
+const description =
+	'A bookmark library for the Mac. Bookmark in your browser as usual; Knoa reads each page and files it for you.';
+
+interface Release {
+	version: string;
+	url: string;
+	sizeMB?: number;
+}
+
+/**
+ * The latest release, read at build time for the version line. The daily rebuild keeps it
+ * current. If GitHub is unreachable the button still works, the line just loses the version.
+ */
+let release: Release | undefined;
+try {
+	const res = await fetch('https://api.github.com/repos/50BytesOfJohn/knoa/releases/latest', {
+		headers: { Accept: 'application/vnd.github+json' },
+		signal: AbortSignal.timeout(5000),
+	});
+	if (res.ok) {
+		const data = (await res.json()) as {
+			tag_name: string;
+			html_url: string;
+			assets: { name: string; size: number }[];
+		};
+		const dmg = data.assets.find((asset) => asset.name === 'Knoa.dmg');
+		release = {
+			version: data.tag_name.replace(/^v/, ''),
+			url: data.html_url,
+			sizeMB: dmg ? Math.round(dmg.size / 1_000_000) : undefined,
+		};
+	}
+} catch {
+	// Offline build or rate limited.
+}
+
+const poster = await getImage({ src: demoPoster, width: 1600, format: 'webp' });
+
+const meta = [
+	release && `Version ${release.version}`,
+	release?.sizeMB && `${release.sizeMB} MB`,
+	'macOS 11 or later',
+	'Apple silicon and Intel',
+].filter(Boolean);
+
+const features = [
+	{
+		label: 'Browsers',
+		text: 'Reads bookmarks from Chrome, Brave, Edge, Vivaldi, Helium and Chromium. New ones show up on their own. No Safari or Firefox yet.',
+	},
+	{
+		label: 'Sorting',
+		text: 'An LLM works out what each page is (an article, a video, a repo, a recipe, a movie…) and writes down its key facts, a few tags and a short summary.',
+	},
+	{
+		label: 'Your rules',
+		text: 'Tell it how you like things filed, in plain words. Once for the whole library, and again for any folder.',
+	},
+	{
+		label: 'Search',
+		text: 'Start typing anywhere. Narrow it down by kind, site, folder or tag.',
+	},
+	{
+		label: 'Undo',
+		text: 'Everything the AI set carries a ✦ and comes off in one click. Your own edits always win.',
+	},
+	{
+		label: 'Workspaces',
+		text: 'Keep work and personal apart, each fed by the browser profiles you pick.',
+	},
+	{
+		label: 'Privacy',
+		text: 'The library stays on your Mac. Only page fetches and model calls leave it, through OpenRouter with your own key. The AI part is optional.',
+	},
+];
+---
+
+<PersonalPage title={`Knoa | ${SITE_TITLE}`} description={description}>
+	<SiteMasthead action="back" />
+
+	<section class="hero" aria-labelledby="knoa-title">
+		<KnoaIcon class="app-icon" width={72} height={72} aria-hidden="true" />
+
+		<h1 id="knoa-title" class="wordmark">
+			<svg viewBox="49.5 29.5 227 95" role="img" aria-label="Knoa">
+				<g
+					fill="none"
+					stroke="currentColor"
+					stroke-width="5"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<path
+						class="stroke stroke-stem"
+						pathLength="1"
+						d="M64 32 C62 62 57 95 52 122"></path>
+					<path
+						class="stroke stroke-word"
+						pathLength="1"
+						d="M100 32 C86 50 72 66 57 76 C70 80 80 100 90 115 C95 122 101 121 106 114 C110 100 113 90 116 82 C116 96 114 108 112 120 C116 96 126 82 136 82 C146 82 146 96 144 108 C143 116 148 120 156 116 C164 112 172 92 188 82 C174 80 168 98 170 110 C172 122 188 124 196 112 C203 100 200 82 188 82 C196 86 214 86 236 82 C220 80 212 96 214 108 C216 122 234 122 242 102 C244 94 246 86 246 82 C244 98 242 114 248 119 C251 123 257 121 261 117"
+					></path>
+				</g>
+				<circle class="dot" cx="271.5" cy="118" r="5"></circle>
+			</svg>
+		</h1>
+
+		<p class="lede">A bookmark library for the Mac.</p>
+		<p>
+			Keep bookmarking in your browser. Knoa picks up each new bookmark, reads the page and files
+			it: what it is, a short summary, tags, and the folder it belongs in. When you need it again,
+			you search.
+		</p>
+
+		<div class="download" data-download data-os="mac">
+			<a class="download-button" href={downloadUrl} download data-download-link>
+				<svg class="apple" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+					<path
+						fill="currentColor"
+						d="M11.18 8.5c-.02-1.64 1.34-2.43 1.4-2.47-.76-1.12-1.95-1.27-2.38-1.29-1.01-.1-1.98.6-2.49.6-.52 0-1.31-.59-2.15-.57-1.1.02-2.12.64-2.69 1.63-1.15 1.99-.29 4.94.83 6.56.55.79 1.2 1.68 2.05 1.65.82-.03 1.13-.53 2.13-.53 1 0 1.27.53 2.15.51.89-.02 1.45-.8 1.99-1.6.63-.92.89-1.81.9-1.86-.02-.01-1.73-.66-1.74-2.63ZM9.55 3.67c.45-.55.76-1.31.67-2.07-.65.03-1.44.43-1.91.98-.42.48-.79 1.26-.69 2 .73.06 1.47-.37 1.93-.91Z"
+					></path>
+				</svg>
+				<span data-download-label>Download for Mac</span>
+			</a>
+			<p class="download-meta">{meta.join(' · ')}</p>
+			<p class="download-note" data-download-note aria-live="polite"></p>
+			<p class="download-links">
+				{
+					release && (
+						<a href={release.url} target="_blank" rel="noopener">
+							Release notes ↗
+						</a>
+					)
+				}
+				<a href={`${repo}/releases`} target="_blank" rel="noopener">All releases ↗</a>
+				<a href={repo} target="_blank" rel="noopener">Source ↗</a>
+			</p>
+		</div>
+	</section>
+
+	<figure class="shot shot-paper">
+		<div class="frame">
+		<Image
+			src={libraryPaper}
+			alt="Knoa in the Paper theme, searching for japan. Cards for Kyoto, Spirited Away, Perfect Days, Dune and Past Lives; the detail panel shows Spirited Away with its year, director, cast and tags, all filled in by the AI, and the Watchlist folder it was filed into."
+			widths={[720, 1080, 1440, 2160, 2640]}
+			sizes="(min-width: 64rem) 60rem, calc(100vw - 2rem)"
+			loading="eager"
+			fetchpriority="high"
+		/>
+		</div>
+	</figure>
+
+	<section aria-labelledby="features-title">
+		<h2 id="features-title" class="label">What it does</h2>
+		<dl class="features">
+			{
+				features.map((item) => (
+					<div class="feature">
+						<dt>{item.label}</dt>
+						<dd>{item.text}</dd>
+					</div>
+				))
+			}
+		</dl>
+	</section>
+
+	<figure class="shot shot-demo">
+		<div class="frame">
+			<video
+				class="demo"
+				src="/knoa/demo.mp4"
+				poster={poster.src}
+				width="1600"
+				height="994"
+				muted
+				loop
+				playsinline
+				controls
+				preload="metadata"
+				data-demo
+				aria-label="Screen recording: creating a workspace called Home, adding five folders, then adding twenty links one after another. Cards appear and fill in with images, summaries and folders, then a search for japan and an open bookmark."
+			></video>
+		</div>
+		<figcaption>A new workspace, five folders and twenty links. Sped up about three times.</figcaption>
+	</figure>
+
+	<figure class="shot shot-dusk">
+		<div class="frame">
+		<Image
+			src={libraryDusk}
+			alt="The same library in the Dusk theme, a dark purple look: a masonry of cards for Kyoto, Are.na, Tauri, Acquired, Raycast, Spirited Away, Ghostty and more."
+			widths={[720, 1080, 1440, 2160, 2640]}
+			sizes="(min-width: 64rem) 60rem, calc(100vw - 2rem)"
+		/>
+		</div>
+		<figcaption>Four themes: Paper, Sage, Night and Dusk. This one is Dusk.</figcaption>
+	</figure>
+
+	<section aria-labelledby="status-title">
+		<h2 id="status-title" class="label">Status</h2>
+		<p>
+			Knoa is in alpha. Syncing, sorting, folders and search work; expect rough edges. It's signed
+			and notarized, and it updates itself.
+		</p>
+		<p>
+			It's free and open source under the GPL-3.0. Bugs and ideas go to <a
+				href={`${repo}/issues`}
+				target="_blank"
+				rel="noopener">GitHub issues</a
+			>.
+		</p>
+	</section>
+</PersonalPage>
+
+<script>
+	type OS = 'mac' | 'ios' | 'android' | 'windows' | 'linux' | 'unknown';
+
+	const names: Record<Exclude<OS, 'mac' | 'unknown'>, string> = {
+		ios: 'an iPhone or iPad',
+		android: 'Android',
+		windows: 'Windows',
+		linux: 'Linux',
+	};
+
+	function detectOS(): OS {
+		const nav = navigator as Navigator & { userAgentData?: { platform?: string } };
+		const platform = (nav.userAgentData?.platform || navigator.platform || '').toLowerCase();
+		const ua = navigator.userAgent.toLowerCase();
+		// iPadOS reports itself as a Mac; touch support gives it away.
+		if (/iphone|ipad|ipod/.test(ua) || (platform.includes('mac') && navigator.maxTouchPoints > 1)) {
+			return 'ios';
+		}
+		if (platform.includes('mac') || ua.includes('mac os x')) return 'mac';
+		if (ua.includes('android')) return 'android';
+		if (platform.includes('win') || ua.includes('windows')) return 'windows';
+		if (platform.includes('linux') || ua.includes('linux')) return 'linux';
+		return 'unknown';
+	}
+
+	function init() {
+		const root = document.querySelector<HTMLElement>('[data-download]');
+		const link = root?.querySelector<HTMLAnchorElement>('[data-download-link]');
+		const label = root?.querySelector<HTMLElement>('[data-download-label]');
+		const note = root?.querySelector<HTMLElement>('[data-download-note]');
+		if (!root || !link || !label || !note) return;
+
+		const os = detectOS();
+		root.dataset.os = os;
+
+		// Macs, and anything we can't tell, get the plain download. Everyone else learns it's a
+		// Mac app first; the DMG is still one click away if they want it for another machine.
+		if (os !== 'mac' && os !== 'unknown') {
+			label.textContent = 'Download for Mac anyway';
+			note.textContent = `Knoa is a Mac app, and you're on ${names[os]}. Open this page on a Mac to install it.`;
+			return;
+		}
+
+		link.addEventListener('click', () => {
+			note.textContent = 'Downloading Knoa.dmg. Open it and drag Knoa into Applications.';
+		});
+	}
+
+	/**
+	 * The demo plays only while it's on screen, without controls in the way. With reduced
+	 * motion it stays paused on the poster and keeps its controls, so playing is a choice.
+	 */
+	function initDemo() {
+		const video = document.querySelector<HTMLVideoElement>('[data-demo]');
+		if (!video || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+		video.controls = false;
+		let paused = false;
+		const observer = new IntersectionObserver(
+			([entry]) => {
+				if (entry.isIntersecting && !paused) video.play().catch(() => {});
+				else video.pause();
+			},
+			{ threshold: 0.4 },
+		);
+		observer.observe(video);
+		video.addEventListener('click', () => {
+			paused = !video.paused;
+			if (paused) video.pause();
+			else video.play().catch(() => {});
+		});
+		document.addEventListener('astro:before-swap', () => observer.disconnect(), { once: true });
+	}
+
+	document.addEventListener('astro:page-load', () => {
+		init();
+		initDemo();
+	});
+</script>
+
+<style>
+	/* Knoa's own palette, taken from its icon. Kept to this page and used sparingly. */
+	.hero,
+	.shot,
+	.features {
+		--knoa-ink: #1f1d1a;
+		--knoa-dot: #e0573c;
+		--knoa-ai: #b26a1d;
+		--knoa-paper-top: #fdfbf7;
+		--knoa-paper-bottom: #ebe4d6;
+	}
+
+	.hero {
+		max-width: 31rem;
+	}
+
+	.hero p {
+		margin: 0 0 1rem;
+		text-wrap: pretty;
+	}
+
+	:global(.app-icon) {
+		display: block;
+		margin-block-end: 1.5rem;
+		filter: drop-shadow(0 1px 1px rgb(31 29 26 / 0.08)) drop-shadow(0 6px 14px rgb(31 29 26 / 0.1));
+	}
+
+	.wordmark {
+		margin: 0 0 1rem;
+		color: var(--knoa-ink);
+		line-height: 0;
+	}
+
+	.wordmark svg {
+		display: block;
+		width: 8.5rem;
+		height: auto;
+		overflow: visible;
+	}
+
+	.dot {
+		fill: var(--knoa-dot);
+		transform-box: fill-box;
+		transform-origin: center;
+	}
+
+	.lede {
+		font-size: 1.125rem;
+		color: var(--ink);
+	}
+
+	/* --- Download --- */
+
+	.download {
+		margin-block-start: 1.75rem;
+	}
+
+	.download-button {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.55rem;
+		min-height: 2.75rem;
+		padding: 0 1.1rem 0 1rem;
+		border-radius: 999px;
+		background: var(--knoa-ink);
+		color: #fdfbf7;
+		font-size: 0.9375rem;
+		font-weight: 500;
+		text-decoration: none;
+		touch-action: manipulation;
+		-webkit-tap-highlight-color: transparent;
+	}
+
+	/* The icon's orange dot, trailing the label like the full stop in the wordmark. */
+	.download-button::after {
+		content: '';
+		width: 0.375rem;
+		height: 0.375rem;
+		margin-inline-start: -0.2rem;
+		margin-block-start: 0.55rem;
+		border-radius: 50%;
+		background: var(--knoa-dot);
+	}
+
+	.download-button:focus-visible {
+		outline: 2px solid var(--knoa-ink);
+		outline-offset: 3px;
+	}
+
+	.download-button .apple {
+		margin-block-start: -2px;
+	}
+
+	.download:not([data-os='mac']):not([data-os='unknown']) .download-button {
+		background: transparent;
+		color: var(--ink);
+		box-shadow: inset 0 0 0 1px var(--rule);
+	}
+
+	.hero .download-meta {
+		margin: 0.875rem 0 0;
+		font-size: 0.8125rem;
+		color: var(--ink-faint);
+	}
+
+	.hero .download-note {
+		margin: 0.5rem 0 0;
+		font-size: 0.875rem;
+		color: var(--ink);
+	}
+
+	.hero .download-note:empty {
+		display: none;
+	}
+
+	.hero .download-links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem 1.25rem;
+		margin: 0.5rem 0 0;
+		font-size: 0.875rem;
+	}
+
+	/* --- Screenshots --- */
+
+	/* Break out of the 36rem column: a window screenshot squeezed to text width is unreadable. */
+	.shot {
+		--shot-width: min(60rem, calc(100vw - 2rem));
+		width: var(--shot-width);
+		margin: 0;
+		margin-inline: calc((var(--shot-width) - 100%) / -2);
+	}
+
+	.frame {
+		padding: clamp(0.75rem, 4vw, 2.5rem);
+		border-radius: 18px;
+		background: linear-gradient(var(--knoa-paper-top), var(--knoa-paper-bottom));
+	}
+
+	/* The recording keeps the desktop in the window's corners; rounding the video hides it. */
+	.demo {
+		display: block;
+		width: 100%;
+		height: auto;
+		border-radius: 1.15% / 1.85%;
+		box-shadow:
+			0 1px 2px rgb(31 29 26 / 0.12),
+			0 12px 28px rgb(31 29 26 / 0.14);
+		cursor: pointer;
+	}
+
+	.demo[controls] {
+		cursor: auto;
+	}
+
+	.shot-dusk .frame {
+		background: linear-gradient(#2d2b28, #191816);
+	}
+
+	/* The capture keeps the window's rounded corners transparent, so the shadow follows them. */
+	.shot :global(img) {
+		display: block;
+		width: 100%;
+		height: auto;
+		filter: drop-shadow(0 1px 2px rgb(31 29 26 / 0.12)) drop-shadow(0 12px 28px rgb(31 29 26 / 0.14));
+	}
+
+	.shot figcaption {
+		margin-block-start: 0.875rem;
+		font-size: 0.8125rem;
+		color: var(--ink-faint);
+		text-align: center;
+	}
+
+	/* --- Features --- */
+
+	.label {
+		margin: 0 0 1rem;
+		font-size: 0.6875rem;
+		font-weight: 500;
+		letter-spacing: 0.09em;
+		text-transform: uppercase;
+		color: var(--ink-faint);
+	}
+
+	.features {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		margin: 0;
+	}
+
+	/* Same 7rem label column as the project list and the stack table elsewhere on the site. */
+	.feature {
+		display: grid;
+		grid-template-columns: 7rem 1fr;
+		gap: 0 1.5rem;
+	}
+
+	.feature dt {
+		display: flex;
+		align-items: baseline;
+		gap: 0.5rem;
+		font-size: 0.8125rem;
+		color: var(--ink-faint);
+	}
+
+	.feature dt::before {
+		content: '';
+		flex: none;
+		width: 0.3125rem;
+		height: 0.3125rem;
+		border-radius: 50%;
+		background: var(--knoa-dot);
+		transform: translateY(-0.12em);
+	}
+
+	.feature dd {
+		margin: 0;
+		text-wrap: pretty;
+	}
+
+	section p {
+		margin: 0 0 1rem;
+		text-wrap: pretty;
+	}
+
+	section p:last-child {
+		margin-bottom: 0;
+	}
+
+	a {
+		color: var(--ink);
+		text-decoration: underline;
+		text-decoration-color: var(--rule);
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+		transition: text-decoration-color 150ms ease;
+	}
+
+	a:hover {
+		text-decoration-color: var(--ink);
+	}
+
+	@media (max-width: 30rem) {
+		.feature {
+			grid-template-columns: 1fr;
+			gap: 0.125rem;
+		}
+	}
+
+	/* --- Motion: the wordmark writes itself once, then the dot lands. --- */
+
+	@media (prefers-reduced-motion: no-preference) {
+		.stroke {
+			stroke-dasharray: 1;
+			stroke-dashoffset: 1;
+			animation: write var(--write-duration) var(--write-delay) cubic-bezier(0.45, 0, 0.25, 1)
+				forwards;
+		}
+
+		.stroke-stem {
+			--write-duration: 260ms;
+			--write-delay: 150ms;
+		}
+
+		.stroke-word {
+			--write-duration: 1300ms;
+			--write-delay: 380ms;
+		}
+
+		.dot {
+			transform: scale(0);
+			animation: land 420ms 1650ms cubic-bezier(0.34, 1.8, 0.64, 1) forwards;
+		}
+
+		@keyframes write {
+			to {
+				stroke-dashoffset: 0;
+			}
+		}
+
+		@keyframes land {
+			to {
+				transform: scale(1);
+			}
+		}
+	}
+
+	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+		:global(.app-icon) {
+			transition: transform 300ms cubic-bezier(0.34, 1.6, 0.64, 1);
+		}
+
+		:global(.app-icon):hover {
+			transform: rotate(-6deg) scale(1.04);
+		}
+
+		.download-button {
+			transition:
+				transform 150ms var(--ease-out),
+				background-color 150ms ease;
+		}
+
+		.download-button::after {
+			transition: transform 250ms cubic-bezier(0.34, 1.8, 0.64, 1);
+		}
+
+		.download-button:hover::after {
+			transform: translateY(-0.3rem) scale(1.25);
+		}
+
+		.download-button:active {
+			transform: scale(0.97);
+		}
+	}
+</style>
